@@ -68,6 +68,13 @@ function doSomething() {
     // console.log(document.querySelector('#test-rock'));
 }
 
+let controller = {
+    // range : 0.00 ~ 0.20
+    gravitySpeed: 0,
+    // range : 0.00 ~ 1.00
+    restitution: 0.2,
+};
+
 var url = 'https://raw.githubusercontent.com/progers/pathseg/master/pathseg.js';
 
 loadGitHubScript(url).then(function () {
@@ -76,11 +83,9 @@ loadGitHubScript(url).then(function () {
         Render = Matter.Render,
         World = Matter.World,
         Bodies = Matter.Bodies,
-        Composites = Matter.Composites,
-        Composite = Matter.Composite,
-        Common = Matter.Common,
+        Body = Matter.Body,
+        Events = Matter.Events,
         Svg = Matter.Svg,
-        Vertices = Matter.Vertices,
         MouseConstraint = Matter.MouseConstraint,
         Mouse = Matter.Mouse;
 
@@ -100,76 +105,86 @@ loadGitHubScript(url).then(function () {
     });
     var ground = Bodies.rectangle(
         window.innerWidth / 2,
-        window.innerHeight,
+        window.innerHeight + 50,
         window.innerWidth,
-        5,
+        100,
         {
             isStatic: true,
         }
     );
 
     var leftWall = Bodies.rectangle(
-        0,
+        -50,
         window.innerHeight / 2,
-        3,
+        100,
         window.innerHeight,
         {
             isStatic: true,
         }
     );
     var rightWall = Bodies.rectangle(
-        window.innerWidth,
+        window.innerWidth + 50,
         window.innerHeight / 2,
-        3,
+        100,
         window.innerHeight,
         {
             isStatic: true,
         }
     );
+
+    var topWall = Bodies.rectangle(
+        window.innerWidth / 2,
+        0 - 50,
+        window.innerWidth,
+        100,
+        {
+            isStatic: true,
+        }
+    );
     var vertexSets = [];
+    let a;
+    let b;
 
     $('#svg')
         .find('.st0')
         .each(function (i, path) {
             // vertexSets.push(Svg.pathToVertices(path, 100));
 
-            let a = Bodies.fromVertices(
-                200,
-                600,
+            a = Bodies.fromVertices(
+                render.canvas.width / render.canvas.width,
+                render.canvas.height / 2,
                 Svg.pathToVertices(path, 10),
                 {
-                    isStatic: true,
                     angle: 1.5,
+                    render: {
+                        fillStyle: '#232323',
+                    },
                 }
             );
 
-            let b = Bodies.fromVertices(
-                600,
-                600,
-                Svg.pathToVertices(path, 10),
-                {
-                    isStatic: true,
-                    angle: 1.7,
-                }
-            );
+            b = Bodies.fromVertices(600, 800, Svg.pathToVertices(path, 10), {
+                angle: 1.7,
+                render: {
+                    fillStyle: '#232323',
+                },
+            });
 
-            let c = Bodies.fromVertices(
-                100,
-                380,
-                Svg.pathToVertices(path, 10),
-                {
-                    isStatic: true,
-                    angle: 1.7,
-                }
-            );
+            let c = Bodies.fromVertices(50, 380, Svg.pathToVertices(path, 10), {
+                angle: 1.7,
+                render: {
+                    fillStyle: '#232323',
+                },
+            });
 
             let d = Bodies.fromVertices(
                 1200,
                 700,
                 Svg.pathToVertices(path, 10),
                 {
-                    isStatic: true,
                     angle: 1.7,
+                    render: {
+                        fillStyle: '#232323',
+                    },
                 }
             );
 
@@ -178,8 +193,10 @@ loadGitHubScript(url).then(function () {
                 150,
                 Svg.pathToVertices(path, 10),
                 {
-                    isStatic: true,
                     angle: 0,
+                    render: {
+                        fillStyle: '#232323',
+                    },
                 }
             );
             vertexSets.push(a, b, c, d, e);
@@ -190,14 +207,14 @@ loadGitHubScript(url).then(function () {
         .each(function (i, path) {
             // vertexSets.push(Svg.pathToVertices(path, 100));
             var v = Bodies.fromVertices(
-                100 + i * 800,
-                80,
+                300 + i * 900,
+                400 + i * 400,
                 Svg.pathToVertices(path, 10),
                 {
                     render: {
                         fillStyle: '#82161E',
                     },
-                    restitution: 1,
+                    restitution: 0,
                 },
                 true
             );
@@ -208,29 +225,112 @@ loadGitHubScript(url).then(function () {
     vertexSets.push(ground);
     vertexSets.push(leftWall);
     vertexSets.push(rightWall);
+    vertexSets.push(topWall);
+
+    let rocks = [];
+
+    $('#svg')
+        .find('.rocks')
+        .each(function (i, path) {
+            // vertexSets.push(Svg.pathToVertices(path, 100));
+            var v = Bodies.fromVertices(
+                0 + i * Math.random() * 300,
+                100 + i * 200,
+                Svg.pathToVertices(path, 10),
+                {
+                    render: {
+                        fillStyle: '#232323',
+                    },
+                    restitution: 0.1,
+                    // frictionAir: Math.random(),
+                    // isStatic: Math.floor(Math.random * 10) < 5 ? false : true,
+                },
+                true
+            );
+            rocks.push(v);
+        });
 
     // add all of the bodies to the world
     World.add(world, vertexSets);
-
+    World.add(world, rocks);
     var mouse = Mouse.create(render.canvas),
         mouseConstraint = MouseConstraint.create(engine, {
             mouse: mouse,
         });
 
-    console.log(window.devicePixelRatio);
-
     World.add(world, mouseConstraint);
+    console.log(mouseConstraint);
+    mouseConstraint.constraint.render.visible = false;
+    let counter = 0;
+    let aCounter = 0;
+    Events.on(engine, 'beforeUpdate', function (event) {
+        counter += 0.014;
+        aCounter += 0.01;
+
+        if (counter < 0) {
+            return;
+        }
+
+        var px = 400 + 100 * Math.sin(counter);
+        var tx = 700 + 300 * Math.sin(counter);
+        var mx = 200 + (200 * Math.random() * Math.sin(counter)) / 10;
+        var xx = 1000 + 50 * Math.sin(aCounter);
+        var xxx = 1000 + 50 * Math.sin(aCounter * 2);
+        var wx = 400 + 50 * Math.sin(counter);
+        var test = 100 * Math.sin(counter);
+
+        // body is static so must manually update velocity for friction to work
+        // Body.setVelocity(a, { x: px - a.position.x, y: 0 });
+        // Body.setPosition(vertexSets[5], {
+        //     x: tx,
+        //     y: vertexSets[5].position.y,
+        // });
+        // Body.setPosition(vertexSets[6], {
+        //     x: xx,
+        //     y: wx,
+        // });
+        // Body.setPosition(rocks[4], {
+        //     x: xx / 5,
+        //     y: wx / 5,
+        // });
+        Body.setPosition(rocks[0], {
+            x: xxx - 500,
+            y: wx / 2 + 600,
+        });
+        Body.setPosition(rocks[6], {
+            x: xx + 300,
+            y: wx,
+        });
+        // Body.setPosition(rocks[9], {
+        //     x: xx - 400,
+        //     y: wx + 50,
+        // });
+        Body.setPosition(rocks[2], {
+            x: xx - 200,
+            y: wx / 2 + 100,
+        });
+    });
 
     render.mouse = mouse;
+    let i = 0;
+    // setInterval(() => {
+    //     i = i + 1;
+    //     console.log(i);
+    //     if (i % 2 == 0) {
+    //         engine.world.gravity.y = -Math.random() / 50;
+    //     } else {
+    //         engine.world.gravity.y = Math.random() / 50;
+    //     }
+    //     Matter.Engine.update(engine);
+    // }, 3000);
+
     // run the engine
     Matter.Runner.run(engine);
-
+    engine.world.gravity.y = 0;
     // run the renderer
 
     render.options.wireframes = false;
     render.options.background = '#769298';
 
     Render.run(render);
-
-    window.addEventListener('click', (e) => Bodies.rect());
 });
