@@ -75,9 +75,12 @@ let controller = {
     restitution: 0.2,
 };
 
-var url = 'https://raw.githubusercontent.com/progers/pathseg/master/pathseg.js';
+var url = '';
 
 loadGitHubScript(url).then(function () {
+    let width = 1580,
+        height = 680;
+
     // module aliases
     var Engine = Matter.Engine,
         Render = Matter.Render,
@@ -98,109 +101,26 @@ loadGitHubScript(url).then(function () {
         element: document.body,
         engine: engine,
         options: {
-            width: window.innerWidth,
-            height: window.innerHeight,
+            width,
+            height,
             // showAngleIndicator: true,
         },
     });
-    var ground = Bodies.rectangle(
-        window.innerWidth / 2,
-        window.innerHeight + 50,
-        window.innerWidth,
-        100,
-        {
-            isStatic: true,
-        }
-    );
+    var ground = Bodies.rectangle(width / 2, height + 50, width, 100, {
+        isStatic: true,
+    });
 
-    var leftWall = Bodies.rectangle(
-        -50,
-        window.innerHeight / 2,
-        100,
-        window.innerHeight,
-        {
-            isStatic: true,
-        }
-    );
-    var rightWall = Bodies.rectangle(
-        window.innerWidth + 50,
-        window.innerHeight / 2,
-        100,
-        window.innerHeight,
-        {
-            isStatic: true,
-        }
-    );
+    var leftWall = Bodies.rectangle(-50, height / 2, 100, window.innerHeight, {
+        isStatic: true,
+    });
+    var rightWall = Bodies.rectangle(width + 50, height / 2, 100, height, {
+        isStatic: true,
+    });
 
-    var topWall = Bodies.rectangle(
-        window.innerWidth / 2,
-        0 - 50,
-        window.innerWidth,
-        100,
-        {
-            isStatic: true,
-        }
-    );
+    var topWall = Bodies.rectangle(width / 2, 0 - 50, width, 100, {
+        isStatic: true,
+    });
     var vertexSets = [];
-    let a;
-    let b;
-
-    $('#svg')
-        .find('.st0')
-        .each(function (i, path) {
-            // vertexSets.push(Svg.pathToVertices(path, 100));
-
-            a = Bodies.fromVertices(
-                render.canvas.width / render.canvas.width,
-                render.canvas.height / 2,
-                Svg.pathToVertices(path, 10),
-                {
-                    angle: 1.5,
-                    render: {
-                        fillStyle: '#232323',
-                    },
-                }
-            );
-
-            b = Bodies.fromVertices(600, 800, Svg.pathToVertices(path, 10), {
-                angle: 1.7,
-                render: {
-                    fillStyle: '#232323',
-                },
-            });
-
-            let c = Bodies.fromVertices(50, 380, Svg.pathToVertices(path, 10), {
-                angle: 1.7,
-                render: {
-                    fillStyle: '#232323',
-                },
-            });
-
-            let d = Bodies.fromVertices(
-                1200,
-                700,
-                Svg.pathToVertices(path, 10),
-                {
-                    angle: 1.7,
-                    render: {
-                        fillStyle: '#232323',
-                    },
-                }
-            );
-
-            let e = Bodies.fromVertices(
-                800,
-                150,
-                Svg.pathToVertices(path, 10),
-                {
-                    angle: 0,
-                    render: {
-                        fillStyle: '#232323',
-                    },
-                }
-            );
-            vertexSets.push(a, b, c, d, e);
-        });
 
     $('#svg')
         .find('.cls-1')
@@ -212,7 +132,10 @@ loadGitHubScript(url).then(function () {
                 Svg.pathToVertices(path, 10),
                 {
                     render: {
-                        fillStyle: '#82161E',
+                        fillStyle: 'green',
+                        sprite: {
+                            texture: `./box.png`,
+                        },
                     },
                     restitution: 0,
                 },
@@ -226,7 +149,6 @@ loadGitHubScript(url).then(function () {
     vertexSets.push(leftWall);
     vertexSets.push(rightWall);
     vertexSets.push(topWall);
-
     let rocks = [];
 
     $('#svg')
@@ -242,6 +164,8 @@ loadGitHubScript(url).then(function () {
                         fillStyle: '#232323',
                     },
                     restitution: 0.1,
+                    isStatic: true,
+
                     // frictionAir: Math.random(),
                     // isStatic: Math.floor(Math.random * 10) < 5 ? false : true,
                 },
@@ -260,7 +184,7 @@ loadGitHubScript(url).then(function () {
 
     World.add(world, mouseConstraint);
     console.log(mouseConstraint);
-    mouseConstraint.constraint.render.visible = false;
+    mouseConstraint.constraint.render.visible = true;
     let counter = 0;
     let aCounter = 0;
     Events.on(engine, 'beforeUpdate', function (event) {
